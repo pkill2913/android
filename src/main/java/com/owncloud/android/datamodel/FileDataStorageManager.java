@@ -34,7 +34,7 @@ import android.net.Uri;
 import android.os.RemoteException;
 import android.provider.MediaStore;
 import android.text.TextUtils;
-
+import androidx.annotation.Nullable;
 import com.owncloud.android.MainApp;
 import com.owncloud.android.db.ProviderMeta.ProviderTableMeta;
 import com.owncloud.android.lib.common.network.WebdavEntry;
@@ -50,6 +50,8 @@ import com.owncloud.android.operations.RemoteOperationFailedException;
 import com.owncloud.android.utils.FileStorageUtils;
 import com.owncloud.android.utils.MimeType;
 import com.owncloud.android.utils.MimeTypeUtil;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -61,10 +63,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-
-import androidx.annotation.Nullable;
-import lombok.Getter;
-import lombok.Setter;
 
 @Getter
 public class FileDataStorageManager {
@@ -208,6 +206,7 @@ public class FileDataStorageManager {
         cv.put(ProviderTableMeta.FILE_OWNER_ID, file.getOwnerId());
         cv.put(ProviderTableMeta.FILE_OWNER_DISPLAY_NAME, file.getOwnerDisplayName());
         cv.put(ProviderTableMeta.FILE_NOTE, file.getNote());
+        cv.put(ProviderTableMeta.FILE_SHAREES, TextUtils.join(",", file.getSharees()));
 
         boolean sameRemotePath = fileExists(file.getRemotePath());
         if (sameRemotePath ||
@@ -450,6 +449,7 @@ public class FileDataStorageManager {
         cv.put(ProviderTableMeta.FILE_OWNER_ID, folder.getOwnerId());
         cv.put(ProviderTableMeta.FILE_OWNER_DISPLAY_NAME, folder.getOwnerDisplayName());
         cv.put(ProviderTableMeta.FILE_NOTE, folder.getNote());
+        cv.put(ProviderTableMeta.FILE_SHAREES, TextUtils.join(",", folder.getSharees()));
 
         return cv;
     }
@@ -489,6 +489,7 @@ public class FileDataStorageManager {
         cv.put(ProviderTableMeta.FILE_OWNER_ID, file.getOwnerId());
         cv.put(ProviderTableMeta.FILE_OWNER_DISPLAY_NAME, file.getOwnerDisplayName());
         cv.put(ProviderTableMeta.FILE_NOTE, file.getNote());
+        cv.put(ProviderTableMeta.FILE_SHAREES, TextUtils.join(",", file.getSharees()));
 
         return cv;
     }
@@ -988,6 +989,14 @@ public class FileDataStorageManager {
             file.setOwnerId(c.getString(c.getColumnIndex(ProviderTableMeta.FILE_OWNER_ID)));
             file.setOwnerDisplayName(c.getString(c.getColumnIndex(ProviderTableMeta.FILE_OWNER_DISPLAY_NAME)));
             file.setNote(c.getString(c.getColumnIndex(ProviderTableMeta.FILE_NOTE)));
+
+            String sharees = c.getString(c.getColumnIndex(ProviderTableMeta.FILE_SHAREES));
+
+            if (sharees.isEmpty()) {
+                file.setSharees(new ArrayList<>());
+            } else {
+                file.setSharees(new ArrayList<>(Arrays.asList(sharees.split(","))));
+            }
         }
 
         return file;
@@ -1216,7 +1225,7 @@ public class FileDataStorageManager {
             share.setSharedWithDisplayName(
                     c.getString(c.getColumnIndex(ProviderTableMeta.OCSHARES_SHARE_WITH_DISPLAY_NAME)));
             share.setFolder(c.getInt(c.getColumnIndex(ProviderTableMeta.OCSHARES_IS_DIRECTORY)) == 1);
-            share.setUserId(c.getLong(c.getColumnIndex(ProviderTableMeta.OCSHARES_USER_ID)));
+            share.setUserId(c.getString(c.getColumnIndex(ProviderTableMeta.OCSHARES_USER_ID)));
             share.setRemoteId(c.getLong(c.getColumnIndex(ProviderTableMeta.OCSHARES_ID_REMOTE_SHARED)));
             share.setPasswordProtected(c.getInt(c.getColumnIndex(ProviderTableMeta.OCSHARES_IS_PASSWORD_PROTECTED)) == 1);
             share.setNote(c.getString(c.getColumnIndex(ProviderTableMeta.OCSHARES_NOTE)));
